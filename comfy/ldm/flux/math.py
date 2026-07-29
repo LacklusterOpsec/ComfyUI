@@ -48,11 +48,17 @@ def apply_rope(xq, xk, freqs_cis):
     if comfy.model_management.in_training:
         return _apply_rope(xq, xk, freqs_cis)
     else:
-        return comfy.quant_ops.ck.apply_rope(xq, xk, freqs_cis)
+        try:
+            return comfy.quant_ops.ck.apply_rope(xq, xk, freqs_cis)
+        except RuntimeError:
+            return _apply_rope(xq, xk, freqs_cis)
 
 
 def apply_rope1(x, freqs_cis):
     if comfy.model_management.in_training:
         return _apply_rope1(x, freqs_cis)
     else:
-        return comfy.quant_ops.ck.apply_rope1(x, freqs_cis)
+        try:
+            return comfy.quant_ops.ck.apply_rope1(x, freqs_cis)
+        except RuntimeError:
+            return _apply_rope1(x, freqs_cis)
