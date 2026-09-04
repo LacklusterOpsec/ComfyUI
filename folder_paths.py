@@ -330,14 +330,18 @@ def is_within_directory(directory: str, target: str) -> bool:
     that points elsewhere cannot escape the containment check at open time.
     """
     try:
-        directory = os.path.realpath(directory)
-        target = os.path.realpath(target)
-        return os.path.commonpath((directory, target)) == directory
+        dir_real = os.path.realpath(directory)
+        return os.path.commonpath((dir_real, os.path.realpath(target))) == dir_real
     except ValueError:
         # ValueError is raised by realpath() on a path with an embedded null
-        # byte, and by commonpath() on Windows when the paths are on different
-        # drives. In either case the target is not safely within the directory.
-        return False
+        # byte, and by commonpath() on Windows when the realpath'd paths are on
+        # different drives. The latter happens when target is a junction (e.g.
+        # output/audio) that deliberately redirects to another drive, so fall
+        # back to the as-supplied paths to allow those volume redirects. This
+        # fallback is purely textual, so an embedded null byte is not caught
+        # here but still fails at file access downstream.
+        return os.path.abspath(directory) == os.path.commonpath(
+            (os.path.abspath(directory), os.path.abspath(target)))
 
 
 def get_annotated_filepath(name: str, default_dir: str | None=None) -> str:
