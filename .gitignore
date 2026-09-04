@@ -1,5 +1,9 @@
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 /output/
 /input/
 !/input/example.png
@@ -12,7 +16,7 @@ extra_model_paths.yaml
 .vscode/
 .idea/
 venv*/
-.venv/
+.venv*/
 /web/extensions/*
 !/web/extensions/logging.js.example
 !/web/extensions/core/
@@ -24,3 +28,29 @@ web_custom_versions/
 filtered-openapi.yaml
 uv.lock
 .comfy_environment
+
+# Cloned tool repos
+/repos/
+
+# Downloaded wheels and installers
+*.whl
+*.htm
+
+# Local launcher scripts
+launch-*.bat
+build_startup.bat
+build_startup_script.py
+*.ps1
+
+# Scratch and diagnostic files
+temp_*.txt
+*_backup.txt
+numpy-upgrade-finding.txt
+freeze.txt
+output.txt
+prompts.txt
+nul
+test_nvfp4.py
+diag_nvfp4_extended.py
+fix_aux_id.py
+comfyui_launcher_tui.py
