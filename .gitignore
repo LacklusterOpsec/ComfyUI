@@ -1,5 +1,9 @@
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 /output/
 /input/
 !/input/example.png
@@ -12,7 +16,7 @@ extra_model_paths.yaml
 .vscode/
 .idea/
 venv*/
-.venv/
+.venv*/
 /web/extensions/*
 !/web/extensions/logging.js.example
 !/web/extensions/core/
@@ -25,3 +29,63 @@ filtered-openapi.yaml
 uv.lock
 .comfy_environment
 /previews/
+
+# Cloned tool repos
+/repos/
+
+# Downloaded wheels and installers
+*.whl
+*.htm
+
+# Local launcher scripts
+launch-*.bat
+build_startup.bat
+build_startup_script.py
+*.ps1
+
+# Scratch and diagnostic files
+temp_*.txt
+*_backup.txt
+numpy-upgrade-finding.txt
+freeze.txt
+output.txt
+prompts.txt
+nul
+test_nvfp4.py
+diag_nvfp4_extended.py
+fix_aux_id.py
+comfyui_launcher_tui.py
+
+# Local tool state
+.firecrawl/
+.history/
+
+# Local build output
+dist_rebuilt/
+
+# Downloaded archives and local binaries
+*.zip
+*.db
+*.exe
+
+# Attention benchmark and probe scratch
+attn_bench_*
+attn_probe_*
+bench_attn_*
+benchmark_attn_*
+test_spargeattn.py
+
+# Local workflow, notes, and diagnostics
+SCAIL NATIVE*.json
+pruna-image-*.json
+qwen-image-*.json
+0 - Krea 2 - Ultra (Copy).json
+Qwen_2.1_system_prompt_edit.txt
+KJ Qwen sharp.png
+Drift-Control AV - Plain-Language Explanation.md
+Text Document.txt
+changes.txt
+freeze-before.txt
+hold.txt
+pre-upgrade-*.txt
+windows_cuda_host_memory_diagnostic.py
