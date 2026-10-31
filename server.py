@@ -295,6 +295,8 @@ class PromptServer():
         self.app = web.Application(client_max_size=max_upload_size, middlewares=middlewares)
         self.sockets = dict()
         self.sockets_metadata = dict()
+        self.object_info_cache = None
+        self.object_info_lock = asyncio.Lock()
         self.web_root = (
             FrontendManager.init_frontend(args.front_end_version)
             if args.front_end_root is None
@@ -845,8 +847,9 @@ class PromptServer():
             if issubclass(obj_class, _ComfyNodeInternal):
                 return obj_class.GET_NODE_INFO_V1()
             info = {}
-            info['input'] = obj_class.INPUT_TYPES()
-            info['input_order'] = {key: list(value.keys()) for (key, value) in obj_class.INPUT_TYPES().items()}
+            input_types = obj_class.INPUT_TYPES()
+            info['input'] = input_types
+            info['input_order'] = {key: list(value.keys()) for (key, value) in input_types.items()}
             info['is_input_list'] = getattr(obj_class, "INPUT_IS_LIST", False)
             info['output'] = obj_class.RETURN_TYPES
             info['output_is_list'] = obj_class.OUTPUT_IS_LIST if hasattr(obj_class, 'OUTPUT_IS_LIST') else [False] * len(obj_class.RETURN_TYPES)
@@ -889,9 +892,7 @@ class PromptServer():
 
             return info
 
-        @routes.get("/object_info")
-        async def get_object_info(request):
-            self.asset_manager.ensure_scan_started()
+        def build_object_info_body():
             with folder_paths.cache_helper:
                 out = {}
                 for x in nodes.NODE_CLASS_MAPPINGS:
@@ -900,7 +901,27 @@ class PromptServer():
                     except Exception:
                         logging.error(f"[ERROR] An error occurred while retrieving information for the '{x}' node.")
                         logging.error(traceback.format_exc())
-                return web.json_response(out)
+            return json.dumps(out).encode("utf-8")
+
+        def object_info_cache_stale():
+            node_count, folders, _ = self.object_info_cache
+            if node_count != len(nodes.NODE_CLASS_MAPPINGS):
+                return True
+            # cached_filename_list_ revalidates the model folders against their mtimes and
+            # returns None once a file was added or removed, so combos stay current.
+            for folder_name in folders:
+                if folder_paths.cached_filename_list_(folder_name) is None:
+                    return True
+            return False
+
+        @routes.get("/object_info")
+        async def get_object_info(request):
+            self.asset_manager.ensure_scan_started()
+            async with self.object_info_lock:
+                if self.object_info_cache is None or object_info_cache_stale():
+                    body = await asyncio.to_thread(build_object_info_body)
+                    self.object_info_cache = (len(nodes.NODE_CLASS_MAPPINGS), tuple(folder_paths.filename_list_cache), body)
+                return web.Response(body=self.object_info_cache[2], content_type="application/json")
 
         @routes.get("/object_info/{node_class}")
         async def get_object_info_node(request):
