@@ -74,6 +74,7 @@ attn_probe_*
 bench_attn_*
 benchmark_attn_*
 test_spargeattn.py
+lora_probe/
 
 # Local workflow, notes, and diagnostics
 SCAIL NATIVE*.json
@@ -88,4 +89,5 @@ changes.txt
 freeze-before.txt
 hold.txt
 pre-upgrade-*.txt
+requirements-backup-*.txt
 windows_cuda_host_memory_diagnostic.py
