@@ -903,6 +903,8 @@ class PromptServer():
                         logging.error(traceback.format_exc())
             return json.dumps(out).encode("utf-8")
 
+        self.build_object_info_body = build_object_info_body
+
         def object_info_cache_stale():
             node_count, folders, _ = self.object_info_cache
             if node_count != len(nodes.NODE_CLASS_MAPPINGS):
@@ -919,8 +921,21 @@ class PromptServer():
             self.asset_manager.ensure_scan_started()
             async with self.object_info_lock:
                 if self.object_info_cache is None or object_info_cache_stale():
+                    # Send the headers before building. The frontend aborts when
+                    # response headers take too long, and a cold build can take
+                    # over a minute while custom nodes are still starting up.
+                    response = web.StreamResponse()
+                    response.content_type = "application/json"
+                    if args.enable_compress_response_body and "gzip" in request.headers.get("Accept-Encoding", ""):
+                        response.enable_compression()
+                    await response.prepare(request)
+                    start = time.perf_counter()
                     body = await asyncio.to_thread(build_object_info_body)
                     self.object_info_cache = (len(nodes.NODE_CLASS_MAPPINGS), tuple(folder_paths.filename_list_cache), body)
+                    logging.info(f"Built object info for {len(nodes.NODE_CLASS_MAPPINGS)} nodes in {time.perf_counter() - start:.1f}s")
+                    await response.write(body)
+                    await response.write_eof()
+                    return response
                 return web.Response(body=self.object_info_cache[2], content_type="application/json")
 
         @routes.get("/object_info/{node_class}")
@@ -1548,12 +1563,28 @@ class PromptServer():
             msg = await self.messages.get()
             await self.send(*msg)
 
+    async def warm_object_info_cache(self):
+        build = getattr(self, "build_object_info_body", None)
+        if build is None:
+            return
+        try:
+            async with self.object_info_lock:
+                if self.object_info_cache is not None:
+                    return
+                start = time.perf_counter()
+                body = await asyncio.to_thread(build)
+                self.object_info_cache = (len(nodes.NODE_CLASS_MAPPINGS), tuple(folder_paths.filename_list_cache), body)
+                logging.info(f"Built object info for {len(nodes.NODE_CLASS_MAPPINGS)} nodes in {time.perf_counter() - start:.1f}s")
+        except Exception:
+            logging.exception("Failed to build object info at startup")
+
     async def start(self, address, port, verbose=True, call_on_start=None):
         await self.start_multi_address([(address, port)], call_on_start=call_on_start)
 
     async def start_multi_address(self, addresses, call_on_start=None, verbose=True):
         runner = web.AppRunner(self.app, access_log=None)
         await runner.setup()
+        asyncio.create_task(self.warm_object_info_cache())
         ssl_ctx = None
         scheme = "http"
         if args.tls_keyfile and args.tls_certfile:
