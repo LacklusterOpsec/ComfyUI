@@ -91,3 +91,16 @@ hold.txt
 pre-upgrade-*.txt
 requirements-backup-*.txt
 windows_cuda_host_memory_diagnostic.py
+node-deps-logs/ComfyUI-DaSiWa-Nodes.requirements.filtered.txt
+Untitled.png
+trivy.yaml
+pytorch-2.15-upgrade-synopsis.md
+system_prompts/t2i/system_prompt.txt
+system_prompts/i2i/system_prompt.txt
+node-deps-logs/comfyui-vrgamedevgirl.requirements.filtered.txt
+node-constraints.txt
+node-skip-packages.txt
+mise.toml
+imagssssse.png
+image.png
+freeze-2.15-baseline.txt
